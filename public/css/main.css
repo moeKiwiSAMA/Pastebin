@@ -1,0 +1,35 @@
+.submit {
+	background-color:#00897b;
+	border-radius:42px;
+	border:1px solid #005b4f;
+	color:#ffffff;
+	font-family:Arial;
+	font-size:16px;
+	padding:16px 30px;
+    display: block;
+    margin:0 auto;
+}
+.submit:hover {
+	background-color:#005b4f;
+}
+.submit:active {
+	position:relative;
+	top:1px;
+}
+
+.center{
+    width:600px;
+    margin:0 auto;
+}
+
+.textcenter{
+    text-align:center;
+}
+textarea {
+	width: 600px;
+	height: 400px;
+	border: 3px solid #cccccc;
+    padding: 5px;
+    resize: none;
+    margin:0 auto;
+}
