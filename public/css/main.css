@@ -11,6 +11,7 @@
 }
 .submit:hover {
 	background-color:#005b4f;
+	cursor: pointer;
 }
 .submit:active {
 	position:relative;

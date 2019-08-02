@@ -47,7 +47,7 @@ func init() {
 	app.Use(recover.New())
 	app.Use(logger.New())
 
-	// ViewRegister
+	// ViewRegister  
 	app.RegisterView(iris.HTML("./public", ".html").Reload(true))
 
 	// Static assets Handler
@@ -65,8 +65,12 @@ func main() {
 	app.Post("/paste", inputPageHandler)
 
 	// Method: GET
-	// Show RAW data
-	app.Get("/{id:string}", textDataHandler)
+	// Show Paste data
+	app.Get("/{id:string}", pasteDataHandler)
+
+	// Method: GET
+	// Show RAW data(actully not raw now)
+	app.Get("/raw/{id:string}", rawDataHandler)
 
 	// http://localhost:8964
 	// http://localhost:8964/paste
@@ -75,6 +79,14 @@ func main() {
 	app.Run(iris.Addr(":8082"), iris.WithoutServerError(iris.ErrServerClosed))
 }
 
+// Method: GET
+// Main Webpage
+func mainPageHandler(ctx iris.Context) {
+	ctx.View("input.html")
+}
+
+// Method: POST
+// Recv User input
 func inputPageHandler(ctx iris.Context){
 
 	// Verify with recaptcha
@@ -96,11 +108,26 @@ func inputPageHandler(ctx iris.Context){
 	ctx.View("redirect.html")
 }
 
-func mainPageHandler(ctx iris.Context) {
-	ctx.View("input.html")
+
+// Method: GET
+// Show Paste data
+func pasteDataHandler(ctx iris.Context){
+	textID := ctx.Params().GetStringDefault("id", "")
+	
+	v, err := redis.String(redisClient.Do("GET", strings.ToLower(textID)))
+	if err != nil {
+		ctx.ViewData("id", "/")
+		ctx.View("redirect.html")
+	} else {
+		ctx.ViewData("id", textID)
+		ctx.ViewData("content", v)
+		ctx.View("result.html")
+	}
 }
 
-func textDataHandler(ctx iris.Context){
+// Method: GET
+// Show RAW data(actully not raw now)
+func rawDataHandler(ctx iris.Context) {
 	textID := ctx.Params().GetStringDefault("id", "")
 	
 	v, err := redis.String(redisClient.Do("GET", strings.ToLower(textID)))
