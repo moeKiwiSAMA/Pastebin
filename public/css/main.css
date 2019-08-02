@@ -33,3 +33,7 @@ textarea {
     resize: none;
     margin:0 auto;
 }
+
+br {
+	line-height: 200%;
+}
