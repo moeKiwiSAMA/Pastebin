@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"time"
 	"encoding/json"
 	"io/ioutil"
@@ -26,17 +27,28 @@ type RecaptchaResponse struct {
 	Action      string    `json:"action"`
 }
 
-
-// recaptchacSecret should be change
+// Some const URl
 const (
-	recaptchaSecret = ""
+	recaptchaURL = "https://recaptcha.net/recaptcha/api/siteverify"
+)
+
+
+// Info read from cli
+var (
+	runAddress = flag.String("address", "0.0.0.0", "Pastebin Listen Port")
+	runPort = flag.String("port", "8082", "Pastebin Bind IP")
+	recaptchaSecret = flag.String("secretkey", "", "Recaptcha Secret Key")
+	recaptchaPublic = flag.String("publickey", "", "Recaptcha site key")
+	redisAddress = flag.String("redisadd", "127.0.0.1", "RedisIP")
+	redisPort = flag.String("redisport", "6379", "RedisPort")
 )
 
 // Create Redis client instance
 var app = iris.New()
-var redisClient, err = redis.Dial("tcp", "127.0.0.1:6379")
+var redisClient, err = redis.Dial("tcp", *redisAddress + ":" + *redisPort)
 
 func init() {
+	fmt.Println(*recaptchaSecret)
 	// check redis conn error
 	if err != nil {
 		panic(err)
@@ -76,7 +88,7 @@ func main() {
 	// http://localhost:8964/paste
 	// http://localhost:8964/css
 	// http://localhost:8964/{id:string}
-	app.Run(iris.Addr(":8082"), iris.WithoutServerError(iris.ErrServerClosed))
+	app.Run(iris.Addr(*runAddress + ":" + *runPort), iris.WithoutServerError(iris.ErrServerClosed))
 }
 
 // Method: GET
@@ -144,16 +156,16 @@ func rawDataHandler(ctx iris.Context) {
 // www.google.com is not available in some region like china mainland
 func verify(ctx iris.Context) bool {
 	// Makeup URL
-	verifyURL, _ := url.Parse("https://recaptcha.net/recaptcha/api/siteverify")
+	verifyURL, _ := url.Parse(recaptchaURL)
 	arg := verifyURL.Query()
-	arg.Set("secret", recaptchaSecret)
+	arg.Set("secret", *recaptchaSecret)
 	arg.Set("response", ctx.FormValue("g-recaptcha-response"))
 	verifyURL.RawQuery = arg.Encode()
 
 	// Send to recaptcha verigy server
 	recv, err := http.Get(verifyURL.String())
 	if err != nil {
-		app.Logger().Infof("Can't connect to recaptcha server.")
+		app.Logger().Infof("Can't to recaptcha server.")
 		return false
 	}
 
