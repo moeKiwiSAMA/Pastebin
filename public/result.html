@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link rel="stylesheet" href="./css/main.css" type="text/css">
+    <link rel="stylesheet" href="./css/prism.css" type="text/css">
+    <script src="./js/prism.js"></script>
     <script>
     function copyLink() {
         var copyText = document.getElementById("url");
@@ -16,16 +18,14 @@
     <title>Pastec Link</title>
 </head>
 <body>
-    <div class="center">
-    <textarea>{{.content}}</textarea>
-    <input class="center" type="text" id="url" value="http://27-50-162-210.moekiwisama.club:8082/{{.id}}">
-    <br/>
+    <div class="container">
     <button class="submit" onclick="copyLink()">Copy this link</button>
-    <br/>
-    <a href="http://27-50-162-210.moekiwisama.club:8082/raw/{{.id}}">
+    <a href="./raw/{{.id}}">
     <button class="submit">Raw Data</button>
     </a>
+    <textarea>{{.content}}</textarea>
+    <input class="center" type="text" id="url" value="https://bin.kiwi.cat/{{.id}}">
+    <br/>
     </div>
-    </script>
 </body>
 </html>

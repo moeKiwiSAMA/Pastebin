@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strconv"
 	"flag"
 	"time"
 	"encoding/json"
@@ -41,7 +42,7 @@ var (
 	recaptchaPublic = flag.String("publickey", "", "Recaptcha site key")
 	redisAddress = flag.String("redisadd", "127.0.0.1", "RedisIP")
 	redisPort = flag.String("redisport", "6379", "RedisPort")
-	
+	domain = flag.String("domain", "", "website domain")	
 )
 // Create Global var
 var (
@@ -71,6 +72,7 @@ func init() {
 
 	// Static assets Handler
 	app.HandleDir("/css", "./public/css")
+	app.HandleDir("/js", "./public/js")
 	app.HandleDir("/img", "./public/img")
 }
 
@@ -114,6 +116,15 @@ func inputPageHandler(ctx iris.Context){
 		return
 	}
 	text := ctx.FormValue("text")
+	if len(text) > 81920 {
+		return
+	}
+	// check duration vaild
+	duration := ctx.FormValue("duration")
+	expire, err := strconv.Atoi(duration)
+	if err != nil || expire < 0 || expire > 18000 {
+		return
+	}
 
 	// Generate an ID with md5[0:6]
 	textMd5 := md5.New()
@@ -121,10 +132,10 @@ func inputPageHandler(ctx iris.Context){
 	textID := (hex.EncodeToString(textMd5.Sum(nil)))[0:6]
 
 	app.Logger().Infof("IP:%s Send a paste %s", ctx.RemoteAddr(), textID)
-	redisClient.Do("SET", textID, text, "ex", "1000")
+	redisClient.Do("SET", textID, text, "ex", strconv.Itoa(expire))
 
 	ctx.ViewData("id", textID)
-	ctx.View("redirect.html")
+	ctx.Redirect(textID, 302)
 }
 
 
@@ -135,8 +146,7 @@ func pasteDataHandler(ctx iris.Context){
 	
 	v, err := redis.String(redisClient.Do("GET", strings.ToLower(textID)))
 	if err != nil {
-		ctx.ViewData("id", "/")
-		ctx.View("redirect.html")
+		ctx.Redirect("", 302)
 	} else {
 		ctx.ViewData("id", textID)
 		ctx.ViewData("content", v)
@@ -151,8 +161,7 @@ func rawDataHandler(ctx iris.Context) {
 	
 	v, err := redis.String(redisClient.Do("GET", strings.ToLower(textID)))
 	if err != nil {
-		ctx.ViewData("id", "/")
-		ctx.View("redirect.html")
+		ctx.ViewData("id", textID)
 	} else {
 		ctx.ViewData("content", v)
 		ctx.View("raw.html")

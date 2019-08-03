@@ -6,6 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link rel="stylesheet" href="./css/main.css" type="text/css">
     <script src="https://recaptcha.net//recaptcha/api.js?render=6LemGY4UAAAAAMHo-4aYtj6sOBzaIwtBPnOWklv-"></script>
+    
     <script>
         grecaptcha.ready(function() {
             grecaptcha.execute('6LemGY4UAAAAAMHo-4aYtj6sOBzaIwtBPnOWklv-', {action: 'paste'}).then(function(token) {
@@ -15,19 +16,22 @@
         </script>
     <title>Pastebin</title>
 </head>
-<body>
-    <div class="center">
-        <h1 class="textcenter">Just a pastebin</h1>
-        <form class="center" action="paste" method="POST">
-                <input type="hidden" id="g-recaptcha-response" name="g-recaptcha-response">
-                <input type="hidden" name="action" value="validate_captcha">
+<body></body>
+        <form class="container"action="paste" method="POST">
+            <input type="hidden" id="g-recaptcha-response" name="g-recaptcha-response">
+            <input type="hidden" name="action" value="validate_captcha">
+            <input class="submit" type="submit" value="PASTE"/>
+            <select class="submit" name="duration">
+                <option value ="600">10 Mins</option>
+                <option value ="1800" selected="selected">30 Mins</option>
+                <option value="3600">1 Hr</option>
+                <option value="18000">5 Hrs</option>
+            </select>
+            <br/>
             <textarea name="text"></textarea>
             <br/>
             <div class="center">
-                <input class="submit" type="submit" value="Paste Now"/>
             </div>
         </form>
-
-    </div>
 </body>
 </html>
