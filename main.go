@@ -41,20 +41,27 @@ var (
 	recaptchaPublic = flag.String("publickey", "", "Recaptcha site key")
 	redisAddress = flag.String("redisadd", "127.0.0.1", "RedisIP")
 	redisPort = flag.String("redisport", "6379", "RedisPort")
+	
+)
+// Create Global var
+var (
+	app  *iris.Application
+ 	redisClient redis.Conn
+ 	err error
 )
 
-// Create Redis client instance
-var app = iris.New()
-var redisClient, err = redis.Dial("tcp", *redisAddress + ":" + *redisPort)
-
 func init() {
-	fmt.Println(*recaptchaSecret)
-	// check redis conn error
+	flag.Parse()
+
+	//Create redis client
+	redisClient, err = redis.Dial("tcp", *redisAddress + ":" + *redisPort)
+	fmt.Println("key", *recaptchaSecret)
 	if err != nil {
 		panic(err)
 	}
 
 	// Create Iris app
+	app = iris.New()
 	app.Logger().SetLevel("debug")
 	app.Use(recover.New())
 	app.Use(logger.New())

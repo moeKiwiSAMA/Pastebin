@@ -10,10 +10,11 @@ ADDRESS=0.0.0.0
 PORT=8082
 SECRET=
 PUBLIC=
+REDISPORT=6379
 
 
 all: build run
 build:
 	$(GOBUILD) -o $(PROJECT_NAME) main.go
 run: build  
-	./$(PROJECT_NAME) -address $(ADDRESS) -port $(PORT) -secretkey $(SECRET) -publickey $(PUBLIC)
+	./$(PROJECT_NAME) -address=$(ADDRESS) -port=$(PORT) -secretkey=$(SECRET) -publickey=$(PUBLIC) -redisport=$(REDISPORT)
