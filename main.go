@@ -205,8 +205,8 @@ func verify(ctx iris.Context) bool {
 		app.Logger().Infof("Connection of recaptcha server seems incorrect")
 	}
 
-	// If verify secceed and user score >= 0.5 then return true
-	if reRes.Success && reRes.Score >=0.5 {
+	// If verify secceed and user score >= 0.8 then return true
+	if reRes.Success && reRes.Score >= 0.8 {
 		return true
 	}
 	return false
