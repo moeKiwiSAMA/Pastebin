@@ -1,1 +1,1 @@
-redis-server --daemonize yes & /app/PasteBin
+redis-server --daemonize yes & /app/pastebin
