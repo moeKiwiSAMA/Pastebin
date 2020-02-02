@@ -1,22 +1,27 @@
 package main
 
 import (
-	"strconv"
-	"flag"
-	"time"
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
+	"flag"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"fmt"
+	"os"
+	"strconv"
 	"strings"
+	"time"
+
 	"github.com/gomodule/redigo/redis"
-	"encoding/hex"
-	"io"
-	"crypto/md5"
-	"github.com/kataras/iris/middleware/logger"
-	"github.com/kataras/iris/middleware/recover"
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
+)
+
+// Some const
+const (
+	recaptchaURL = "https://recaptcha.net/recaptcha/api/siteverify"
 )
 
 // RecaptchaResponse is the struct of json recv from recaptcha.net
@@ -28,46 +33,39 @@ type RecaptchaResponse struct {
 	Action      string    `json:"action"`
 }
 
-// Some const URl
-const (
-	recaptchaURL = "https://recaptcha.net/recaptcha/api/siteverify"
-)
-
-
 // Info read from cli
 var (
-	runAddress = flag.String("address", "0.0.0.0", "Pastebin Listen Port")
-	runPort = flag.String("port", "8082", "Pastebin Bind IP")
+	runAddress      = flag.String("address", "0.0.0.0", "Pastebin Listen Port")
+	runPort         = flag.String("port", "80", "Pastebin Bind IP")
+	useRecaptcha    = flag.Bool("userecaptcha", false, "Use Google Recaptcha or not")
 	recaptchaSecret = flag.String("secretkey", "", "Recaptcha Secret Key")
 	recaptchaPublic = flag.String("publickey", "", "Recaptcha site key")
-	redisAddress = flag.String("redisadd", "127.0.0.1", "RedisIP")
-	redisPort = flag.String("redisport", "6379", "RedisPort")
-	domain = flag.String("domain", "", "website domain")	
+	recaptchaScore  = flag.Float64("recaptcharate", 0.6, "Recaptcha verify score")
+	redisAddress    = flag.String("redisadd", "127.0.0.1", "RedisIP")
+	redisPort       = flag.String("redisport", "6379", "RedisPort")
 )
+
 // Create Global var
 var (
-	app  *iris.Application
- 	redisClient redis.Conn
- 	err error
+	app         *iris.Application
+	redisClient redis.Conn
+	err         error
 )
 
 func init() {
 	flag.Parse()
 
 	//Create redis client
-	redisClient, err = redis.Dial("tcp", *redisAddress + ":" + *redisPort)
-	fmt.Println("key", *recaptchaSecret)
+	redisClient, err = redis.Dial("tcp", *redisAddress+":"+*redisPort)
 	if err != nil {
-		panic(err)
+		fmt.Println("Can't not connect to redis.")
+		os.Exit(2)
 	}
 
 	// Create Iris app
 	app = iris.New()
-	app.Logger().SetLevel("debug")
-	app.Use(recover.New())
-	app.Use(logger.New())
 
-	// ViewRegister  
+	// ViewRegister
 	app.RegisterView(iris.HTML("./public", ".html").Reload(true))
 
 	// Static assets Handler
@@ -97,18 +95,22 @@ func main() {
 	// http://localhost:8964/paste
 	// http://localhost:8964/css
 	// http://localhost:8964/{id:string}
-	app.Run(iris.Addr(*runAddress + ":" + *runPort), iris.WithoutServerError(iris.ErrServerClosed))
+	app.Run(iris.Addr(*runAddress+":"+*runPort), iris.WithoutServerError(iris.ErrServerClosed))
 }
 
 // Method: GET
 // Main Webpage
 func mainPageHandler(ctx iris.Context) {
-	ctx.View("input.html")
+	if *useRecaptcha {
+		ctx.View("input.html")
+	} else {
+		ctx.View("input_no_recaptcha.html")
+	}
 }
 
 // Method: POST
 // Recv User input
-func inputPageHandler(ctx iris.Context){
+func inputPageHandler(ctx iris.Context) {
 
 	// Verify with recaptcha
 	if !verify(ctx) {
@@ -138,18 +140,20 @@ func inputPageHandler(ctx iris.Context){
 	ctx.Redirect(textID, 302)
 }
 
-
 // Method: GET
 // Show Paste data
-func pasteDataHandler(ctx iris.Context){
+func pasteDataHandler(ctx iris.Context) {
+
 	textID := ctx.Params().GetStringDefault("id", "")
-	
+
 	v, err := redis.String(redisClient.Do("GET", strings.ToLower(textID)))
 	if err != nil {
 		ctx.Redirect("", 302)
 	} else {
+
 		ctx.ViewData("id", textID)
 		ctx.ViewData("content", v)
+		ctx.ViewData("domain", ctx.GetReferrer().URL)
 		ctx.View("result.html")
 	}
 }
@@ -158,19 +162,22 @@ func pasteDataHandler(ctx iris.Context){
 // Show RAW data(actully not raw now)
 func rawDataHandler(ctx iris.Context) {
 	textID := ctx.Params().GetStringDefault("id", "")
-	
+
 	v, err := redis.String(redisClient.Do("GET", strings.ToLower(textID)))
 	if err != nil {
 		ctx.ViewData("id", textID)
 	} else {
-		ctx.ViewData("content", v)
-		ctx.View("raw.html")
+		// Exist XSS attack
+		ctx.Writef(v)
 	}
 }
 
 // Verify by myself but not iris
 // www.google.com is not available in some region like china mainland
 func verify(ctx iris.Context) bool {
+	if !*useRecaptcha {
+		return true
+	}
 	// Makeup URL
 	verifyURL, _ := url.Parse(recaptchaURL)
 	arg := verifyURL.Query()
@@ -199,14 +206,14 @@ func verify(ctx iris.Context) bool {
 	var reRes RecaptchaResponse
 
 	err = json.Unmarshal(result, &reRes)
-	
+
 	if err != nil {
 		fmt.Println(err)
 		app.Logger().Infof("Connection of recaptcha server seems incorrect")
 	}
 
-	// If verify secceed and user score >= 0.8 then return true
-	if reRes.Success && reRes.Score >= 0.8 {
+	// If verify secceed and user score >= recaptchaScore then return true
+	if reRes.Success && reRes.Score >= *recaptchaScore {
 		return true
 	}
 	return false

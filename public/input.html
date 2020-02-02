@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link rel="stylesheet" href="./css/main.css" type="text/css">
-    <script src="https://recaptcha.net//recaptcha/api.js?render=6LemGY4UAAAAAMHo-4aYtj6sOBzaIwtBPnOWklv-"></script>
+    <script src="https://recaptcha.net//recaptcha/api.js?render={{.recaptchaPublic}}"></script>
     
     <script>
         grecaptcha.ready(function() {
-            grecaptcha.execute('6LemGY4UAAAAAMHo-4aYtj6sOBzaIwtBPnOWklv-', {action: 'paste'}).then(function(token) {
+            grecaptcha.execute('{{.recaptchaPublic}}', {action: 'paste'}).then(function(token) {
                document.getElementById('g-recaptcha-response').value = token;
             });
         });

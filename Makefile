@@ -1,20 +1,19 @@
-PROJECT_NAME=pastebin
-# Basic go command
-GOCMD=go
-GOBUILD=$(GOCMD) build
-GOClEAN=$(GOCMD) clean
-GOTEST=$(GOCMD) test
-GOGET=$(GOCMD) get
-# Pastebin Args
-ADDRESS=0.0.0.0
-PORT=8082
-SECRET=
-PUBLIC=
-REDISPORT=6379
+NAME = moekiwisama/pastebin
+VERSION = 1.0.0
 
+.PHONY: build start push
 
-all: build run
-build:
-	$(GOBUILD) -o $(PROJECT_NAME) main.go
-run: build  
-	./$(PROJECT_NAME) -address=$(ADDRESS) -port=$(PORT) -secretkey=$(SECRET) -publickey=$(PUBLIC) -redisport=$(REDISPORT)
+build:build-go PasteBin
+	        docker build -t ${NAME}:${VERSION}  .
+
+build-go:
+					CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build
+
+tag-latest:
+	        docker tag ${NAME}:${VERSION} ${NAME}:latest
+
+start:
+	        docker run -it --rm ${NAME}:${VERSION}
+
+push:   build-version tag-latest
+	        docker push ${NAME}:${VERSION}; docker push ${NAME}:latest
