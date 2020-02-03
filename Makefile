@@ -1,5 +1,5 @@
 NAME = moekiwisama/pastebin
-VERSION = 1.0.0
+VERSION = 1.0.1
 
 .PHONY: build start push
 
@@ -7,7 +7,7 @@ build:build-go bin/pastebin
 	        docker build -t ${NAME}:${VERSION}  .
 
 build-go:
-					CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/pastebin
+					CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-s -w" -o bin/pastebin
 
 tag-latest:
 	        docker tag ${NAME}:${VERSION} ${NAME}:latest
