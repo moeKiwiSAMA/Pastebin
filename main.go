@@ -102,6 +102,7 @@ func main() {
 // Main Webpage
 func mainPageHandler(ctx iris.Context) {
 	if *useRecaptcha {
+    ctx.ViewData("recaptchaPublic",*recaptchaPublic)
 		ctx.View("input.html")
 	} else {
 		ctx.View("input_no_recaptcha.html")
